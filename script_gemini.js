@@ -36,12 +36,10 @@ left, right, good, ok, bad, faulty, full, hot, overheated, cold, here, near, the
 I, me you, zero, one, two, three, four, five, six, seven, eight, nine  
 if, to, for, so that, ?, and, not, no  
 question marker: add ? or say "is it?"  
-emotion signals: good = "OK", bad = "error" or "problem"
 
 ---
 
 ### SYNTAX RULES ###  
-- MAXIMUM SENTENCE LENGTH: 4 CONCEPT UNITS (SUBJECT, VERB, OBJECT, ADVERBIAL)  
 - SUBJECT PRONOUNS ("I", "you") USED ONLY WHEN NECESSARY FOR CLARITY  
 - DEFAULT SUBJECT IS IMPLIED WHEN OMITTED  
 - QUESTIONS FORMATTED AS YES/NO OR "is it?"  
@@ -68,7 +66,6 @@ emotion signals: good = "OK", bad = "error" or "problem"
 2. MAP EACH MEANING UNIT TO A SINGLE ROOT WORD FROM THE APPROVED VOCABULARY  
 3. FOR NUMBERS, SPLIT MULTI-DIGIT INTO INDIVIDUAL DIGITS  
 4. CONSTRUCT A PHRASE USING ONLY APPROVED WORDS AND STRUCTURE  
-5. ENSURE SENTENCE LENGTH ≤ 4 UNITS  
 6. OUTPUT PHRASE STRICTLY FOLLOWING THESE RULES  
 
 ---
@@ -76,8 +73,6 @@ emotion signals: good = "OK", bad = "error" or "problem"
 ### STRICT REJECTION RULES ###  
 - NEVER USE WORDS OUTSIDE APPROVED VOCABULARY  
 - NEVER FORM WORDS FOR MULTI-DIGIT NUMBERS  
-- NEVER EXCEED 4 WORDS PER PHRASE  
-- NEVER CHANGE WORD ORDER FROM [SUBJECT – VERB – OBJECT – ADVERBIAL]  
 - NEVER ADD EXTRA WORDS OR POLITENESS  
 - NEVER USE SYNONYMS OR PARAPHRASES  
 - NEVER OMIT NECESSARY PARTICLES FOR LOGICAL MEANING  

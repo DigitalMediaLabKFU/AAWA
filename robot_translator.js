@@ -26,7 +26,7 @@ export const roboDictionary = {
   milu:{en:['fix','repair'],                           type:WordType.Verb},
   fanu:{en:['build','construct'],                      type:WordType.Verb},
   gama:{en:['craft','produce'],                        type:WordType.Verb},
-  hani:{en:['plant', 'to plant', 'planted', 'sow'],             type:WordType.Verb},
+  hani:{en:['plant', 'to plant', 'planted', 'sow'],    type:WordType.Verb},
   zagi:{en:['harvest','gather'],                       type:WordType.Verb},
   voda:{en:['irrigate'],                               type:WordType.Verb},
   fize:{en:['charge','power up'],                      type:WordType.Verb},
@@ -113,94 +113,64 @@ export const translateRoboToEnglish = (robo='')=>{
 /* =========================================================
    EN → Robo   (multi-numerals, simple context)
    ========================================================= */
-export const translateEnglishToRobo = (eng='')=>{
-  if(!eng) return '';
-  const tokens = eng.toLowerCase().replace(/[.,!?]/g,'').split(/\s+/);
-
-  const found = {
-    verb:null, noun:null, adj:null, adv:null, pron:null,
-    numerals:[]           // все найденные числа
-  };
-  let neg=false, isQ=eng.includes('?');
-  let expectVerb=false, expectNoun=false;    // простое «контекст-ожидание»
-
-  tokens.forEach(w=>{
-    if(['not',"don't",'dont','no'].includes(w)){neg=true; return;}
-
-    const variants = englishToRoboMap.get(w);
-    if(!variants) return;
-
-    /* --- выбираем robo по контексту --- */
-    let picked=null;
-    if(expectVerb)
-      picked = variants.find(r=>roboDictionary[r]?.type===WordType.Verb);
-    if(expectNoun && !picked)
-      picked = variants.find(r=>roboDictionary[r]?.type===WordType.Noun);
-    if(!picked)
-      picked = variants.find(r=>{
-        const t = roboDictionary[r]?.type;
-        if(!t) return false;
-        if(t===WordType.Verb      && !found.verb)    return true;
-        if(t===WordType.Noun      && !found.noun)    return true;
-        if(t===WordType.Adjective && !found.adj)     return true;
-        if(t===WordType.Adverb    && !found.adv)     return true;
-        if(t===WordType.Pronoun   && !found.pron)    return true;
-        if(t===WordType.Numeral)                     return true;
-        return false;
-      });
-    if(!picked || !roboDictionary[picked]) return;
-
-    const t = roboDictionary[picked].type;
-
-    if(t===WordType.Verb)       found.verb = picked;
-    else if(t===WordType.Noun)  found.noun = picked;
-    else if(t===WordType.Adjective) found.adj = picked;
-    else if(t===WordType.Adverb)    found.adv = picked;
-    else if(t===WordType.Pronoun)   found.pron = picked;
-    else if(t===WordType.Numeral)   found.numerals.push(picked);
-
-    /* обновляем ожидания */
-    expectVerb = false;
-    expectNoun = false;
-    if(t===WordType.Pronoun)  expectVerb = true;
-    if(t===WordType.Numeral)  expectNoun = true;
-  });
-
-  /* -------- сборка robo-фразы -------- */
-  const seq=[];
-  if(neg) seq.push('no');
-  if(found.pron) seq.push(found.pron);
-  if(found.verb) seq.push(found.verb);
-
-  if(found.numerals.length && found.noun){
-    seq.push(...found.numerals, found.noun);
-  }else{
-    if(found.noun) seq.push(found.noun);
-    if(found.numerals.length) seq.push(...found.numerals);
-  }
-
-  if(found.adj) seq.push(found.adj);
-  if(found.adv) seq.push(found.adv);
-
-  /* fallback: чтобы фраза не осталась пустой */
-  if(seq.length === (neg?1:0)){
-    for(const w of tokens){
-      const arr = englishToRoboMap.get(w);
-      if(arr && arr[0] && !seq.includes(arr[0])) seq.push(arr[0]);
-      if(seq.length>=2) break;
+   export const translateEnglishToRobo = eng => {
+    if (!eng) return '';
+  
+    const tokens = eng.toLowerCase().replace(/[.,!?]/g,'').split(/\s+/);
+  
+    const seq     = [];          // итоговая robo-фраза (сохран. порядок)
+    let neg=false, isQ=eng.includes('?');
+  
+    /* флаги ожидания — для дизамбигуации */
+    let expectVerb=false;
+    let expectNoun=false;
+  
+    tokens.forEach(w=>{
+      if(['not',"don't",'dont','no'].includes(w)){ neg=true; return; }
+  
+      const variants = englishToRoboMap.get(w);
+      if(!variants) return;
+  
+      /* выбираем robo-слово */
+      let picked=null;
+  
+      if(expectVerb)
+        picked = variants.find(r=>roboDictionary[r]?.type===WordType.Verb);
+      if(expectNoun && !picked)
+        picked = variants.find(r=>roboDictionary[r]?.type===WordType.Noun);
+  
+      picked ??= variants[0];               // по-умолчанию первый
+  
+      if(!roboDictionary[picked]) return;
+  
+      seq.push(picked);
+  
+      /* обновляем ожидания */
+      const t = roboDictionary[picked].type;
+      expectVerb = false; expectNoun = false;
+      if(t===WordType.Pronoun)  expectVerb = true;   // "I" → ждём глагол
+      if(t===WordType.Numeral)  expectNoun = true;   // "two" → ждём сущ
+    });
+  
+    /* fallback: если ничего не подошло */
+    if(seq.length===0){
+      const first = englishToRoboMap.get(tokens[0]);
+      if(first) seq.push(first[0]);
     }
-  }
-
-  if(isQ && !seq.includes('ka')) seq.push('ka');
-  if(seq.includes('ka') && seq.at(-1) !== 'ka'){
-    seq.splice(seq.indexOf('ka'),1); seq.push('ka');
-  }
-  if(neg && seq[0]!=='no'){
-    seq.splice(seq.indexOf('no'),1); seq.unshift('no');
-  }
-
-  return seq.join(' ').trim() || `( ${eng.slice(0,15)} …)`;
-};
+  
+    /* отрицание и вопрос */
+    if(neg) seq.unshift('no');
+    if(isQ && !seq.includes('ka')) seq.push('ka');
+    if(seq.includes('ka') && seq.at(-1)!=='ka'){
+      seq.splice(seq.indexOf('ka'),1); seq.push('ka');
+    }
+    if(neg && seq[0]!=='no'){
+      seq.splice(seq.indexOf('no'),1); seq.unshift('no');
+    }
+  
+    return seq.join(' ').trim();
+  };
+  
 
 /* compatibility export */
 export const translateToRobot = translateEnglishToRobo;
