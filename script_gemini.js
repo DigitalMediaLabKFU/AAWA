@@ -8,7 +8,30 @@
    import { translateToRobot }  from './robot_translator.js';
    
    /* ---------- Gemini SETTINGS ---------- */
-   const GEMINI_API_KEY = '';
+   const keyBar = document.createElement('div');
+keyBar.style.cssText = `
+  position:fixed; top:4px; left:4px; z-index:9999;
+  backdrop-filter:blur(4px); background:rgba(0,0,0,.5);
+  padding:4px 8px; border-radius:6px; font:14px/18px sans-serif; color:#fff`;
+keyBar.innerHTML =
+  `<input id="gkey" type="password" placeholder="Gemini API key"
+          style="width:220px; padding:3px 6px; border:1px solid #555;
+                 border-radius:4px; background:#222; color:#9f9">
+   <button id="gkSave"
+          style="margin-left:6px; padding:3px 8px; cursor:pointer;">Save</button>`;
+document.body.appendChild(keyBar);
+
+const keyInput = /** @type {HTMLInputElement} */(document.getElementById('gkey'));
+const gkSave   = document.getElementById('gkSave');
+keyInput.value = localStorage.getItem('gemini_api_key') || '';
+
+function saveKey(){
+  localStorage.setItem('gemini_api_key', keyInput.value.trim());
+  gkSave.textContent = '✓';
+  setTimeout(()=>gkSave.textContent='Save', 1200);
+}
+gkSave.onclick = saveKey;
+keyInput.onkeydown = e=>{ if(e.key==='Enter') saveKey(); };
    const GEMINI_MODEL   = 'gemini-2.5-flash-preview-05-20';                 // flash или pro
    
    /* ---------- System-prompt (копия из script_local) ---------- */
@@ -262,6 +285,9 @@ async function sendMessage() {
    Gemini call helper
    ========================================================= */
 async function callGemini(hist) {
+  const apiKey = localStorage.getItem('gemini_api_key')?.trim();
+  if(!apiKey) throw new Error('API key empty');
+
   const gHistory = SYS_PROMPTS.concat(
     hist.map(m => ({
       role : m.role === 'assistant' ? 'model' : 'user',
@@ -270,7 +296,7 @@ async function callGemini(hist) {
   );
 
   const resp = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`,
+    `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${apiKey}`,
     {
       method : 'POST',
       headers: { 'Content-Type':'application/json' },

@@ -111,66 +111,189 @@ export const translateRoboToEnglish = (robo='')=>{
 };
 
 /* =========================================================
-   EN → Robo   (multi-numerals, simple context)
+   EN → Robo   (enhanced version with grammar analysis)
    ========================================================= */
-   export const translateEnglishToRobo = eng => {
-    if (!eng) return '';
-  
-    const tokens = eng.toLowerCase().replace(/[.,!?]/g,'').split(/\s+/);
-  
-    const seq     = [];          // итоговая robo-фраза (сохран. порядок)
-    let neg=false, isQ=eng.includes('?');
-  
-    /* флаги ожидания — для дизамбигуации */
-    let expectVerb=false;
-    let expectNoun=false;
-  
-    tokens.forEach(w=>{
-      if(['not',"don't",'dont','no'].includes(w)){ neg=true; return; }
-  
-      const variants = englishToRoboMap.get(w);
-      if(!variants) return;
-  
-      /* выбираем robo-слово */
-      let picked=null;
-  
-      if(expectVerb)
-        picked = variants.find(r=>roboDictionary[r]?.type===WordType.Verb);
-      if(expectNoun && !picked)
-        picked = variants.find(r=>roboDictionary[r]?.type===WordType.Noun);
-  
-      picked ??= variants[0];               // по-умолчанию первый
-  
-      if(!roboDictionary[picked]) return;
-  
-      seq.push(picked);
-  
-      /* обновляем ожидания */
-      const t = roboDictionary[picked].type;
-      expectVerb = false; expectNoun = false;
-      if(t===WordType.Pronoun)  expectVerb = true;   // "I" → ждём глагол
-      if(t===WordType.Numeral)  expectNoun = true;   // "two" → ждём сущ
-    });
-  
-    /* fallback: если ничего не подошло */
-    if(seq.length===0){
-      const first = englishToRoboMap.get(tokens[0]);
-      if(first) seq.push(first[0]);
+export const translateEnglishToRobo = eng => {
+  if (!eng) return '';
+
+  const tokens = eng.toLowerCase().replace(/[.,!?]/g,'').split(/\s+/);
+  const seq = [];          // итоговая robo-фраза
+  let neg = false, isQ = eng.includes('?');
+
+  /* Grammar context tracking */
+  let lastWordType = null;
+  let lastWord = null;
+  let hasArticle = false;
+  let hasPreposition = false;
+  let expectVerb = false;
+  let expectNoun = false;
+  let isInfinitive = false;
+  let currentPreposition = null;
+
+  // Grammar helper functions
+  const isArticle = word => ['a', 'an', 'the'].includes(word);
+  const isPreposition = word => ['in', 'on', 'at', 'to', 'for', 'with', 'by', 'from'].includes(word);
+  const isAuxiliaryVerb = word => ['is', 'are', 'was', 'were', 'will', 'would', 'can', 'could', 'should', 'must'].includes(word);
+  const isInfinitiveMarker = word => word === 'to';
+
+  // Enhanced context analysis
+  const getProbableType = (word, variants, nextWord) => {
+    if (!variants) return null;
+    
+    // Single variant case
+    if (variants.length === 1) {
+      return roboDictionary[variants[0]]?.type;
     }
-  
-    /* отрицание и вопрос */
-    if(neg) seq.unshift('no');
-    if(isQ && !seq.includes('ka')) seq.push('ka');
-    if(seq.includes('ka') && seq.at(-1)!=='ka'){
-      seq.splice(seq.indexOf('ka'),1); seq.push('ka');
+
+    // Infinitive analysis
+    if (isInfinitive) {
+      isInfinitive = false;
+      return WordType.Verb;  // After 'to', expect verb
     }
-    if(neg && seq[0]!=='no'){
-      seq.splice(seq.indexOf('no'),1); seq.unshift('no');
+
+    // Article analysis
+    if (hasArticle) {
+      hasArticle = false;
+      return WordType.Noun;  // After article, expect noun
     }
-  
-    return seq.join(' ').trim();
+
+    // Preposition analysis
+    if (hasPreposition) {
+      hasPreposition = false;
+      return WordType.Noun;  // After preposition, expect noun
+    }
+
+    // Auxiliary verb analysis
+    if (isAuxiliaryVerb(lastWord)) {
+      return WordType.Verb;  // After auxiliary, expect main verb
+    }
+
+    // Context-based analysis
+    if (lastWordType === WordType.Pronoun) {
+      return WordType.Verb;  // After pronoun, expect verb
+    }
+    if (lastWordType === WordType.Numeral) {
+      return WordType.Noun;  // After number, expect noun
+    }
+    if (lastWordType === WordType.Verb) {
+      return WordType.Noun;  // After verb, expect noun
+    }
+    if (lastWordType === WordType.Noun) {
+      // Check if next word is a preposition
+      if (nextWord && isPreposition(nextWord)) {
+        return WordType.Noun;  // Before preposition, expect noun
+      }
+      return WordType.Verb;  // After noun, expect verb
+    }
+
+    // Default case
+    return roboDictionary[variants[0]]?.type;
   };
-  
+
+  // Process tokens with lookahead
+  for (let i = 0; i < tokens.length; i++) {
+    const w = tokens[i];
+    const nextWord = tokens[i + 1];
+
+    // Handle negation
+    if (['not', "don't", 'dont', 'no'].includes(w)) {
+      neg = true;
+      continue;
+    }
+
+    // Handle infinitive marker
+    if (isInfinitiveMarker(w)) {
+      isInfinitive = true;
+      continue;
+    }
+
+    // Handle articles
+    if (isArticle(w)) {
+      hasArticle = true;
+      continue;
+    }
+
+    // Handle prepositions
+    if (isPreposition(w)) {
+      hasPreposition = true;
+      currentPreposition = w;
+      continue;
+    }
+
+    // Skip auxiliary verbs
+    if (isAuxiliaryVerb(w)) {
+      continue;
+    }
+
+    const variants = englishToRoboMap.get(w);
+    if (!variants) continue;
+
+    /* Choose robo word */
+    let picked = null;
+    const probableType = getProbableType(w, variants, nextWord);
+
+    if (expectVerb) {
+      picked = variants.find(r => roboDictionary[r]?.type === WordType.Verb);
+    } else if (expectNoun) {
+      picked = variants.find(r => roboDictionary[r]?.type === WordType.Noun);
+    } else if (probableType) {
+      picked = variants.find(r => roboDictionary[r]?.type === probableType);
+    }
+
+    picked ??= variants[0];  // fallback to first variant
+
+    if (!roboDictionary[picked]) continue;
+
+    // Add preposition if needed
+    if (currentPreposition) {
+      const prepositionMap = {
+        'in': 'ina',
+        'on': 'una',
+        'at': 'isi',
+        'to': 'ba',
+        'for': 'ba',
+        'with': 'en',
+        'by': 'ba',
+        'from': 'asa'
+      };
+      const roboPreposition = prepositionMap[currentPreposition];
+      if (roboPreposition) {
+        seq.push(roboPreposition);
+      }
+      currentPreposition = null;
+    }
+
+    seq.push(picked);
+    lastWord = picked;
+    lastWordType = roboDictionary[picked].type;
+
+    /* Update expectations */
+    expectVerb = false;
+    expectNoun = false;
+    if (lastWordType === WordType.Pronoun) expectVerb = true;
+    if (lastWordType === WordType.Numeral) expectNoun = true;
+  }
+
+  /* Fallback: if nothing matched */
+  if (seq.length === 0) {
+    const first = englishToRoboMap.get(tokens[0]);
+    if (first) seq.push(first[0]);
+  }
+
+  /* Handle negation and questions */
+  if (neg) seq.unshift('no');
+  if (isQ && !seq.includes('ka')) seq.push('ka');
+  if (seq.includes('ka') && seq.at(-1) !== 'ka') {
+    seq.splice(seq.indexOf('ka'), 1);
+    seq.push('ka');
+  }
+  if (neg && seq[0] !== 'no') {
+    seq.splice(seq.indexOf('no'), 1);
+    seq.unshift('no');
+  }
+
+  return seq.join(' ').trim();
+};
 
 /* compatibility export */
 export const translateToRobot = translateEnglishToRobo;
