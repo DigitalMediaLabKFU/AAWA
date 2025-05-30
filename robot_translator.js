@@ -81,6 +81,9 @@ export const roboDictionary = {
   no :{en:['not','no'],                                type:WordType.Particle}
 };
 
+const digitToRobo = { '0':'nu','1':'wan','2':'tu','3':'tri','4':'fo',
+  '5':'fi','6':'su','7':'ze','8':'et','9':'nai' };
+
 /* ---------- Build reverse map: EN ➜ [robo1, robo2,…] ---------- */
 const englishToRoboMap = new Map();   // Map<string,string[]>
 
@@ -223,6 +226,12 @@ export const translateEnglishToRobo = eng => {
     // Skip auxiliary verbs
     if (isAuxiliaryVerb(w)) {
       continue;
+    }
+
+    if(/^\d+$/.test(w)){
+      w.split('').forEach(d=> seq.push(digitToRobo[d])); // 14→"1","4"
+      expectVerb=false; expectNoun=true;                 // после числа ждём noun
+      return;
     }
 
     const variants = englishToRoboMap.get(w);
