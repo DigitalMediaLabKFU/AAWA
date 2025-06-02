@@ -53,8 +53,8 @@ YOUR TASK: RESPOND TO THE USER AND RETURN A THREE-PART JSON RESPONSE:
 
 {
   "original" : "<your free-form response to the user IN USER'S LANGUAGE (not limited by CRL-MC)>",
-  "q_simple" : "<user's question rewritten in ultra-simple English using ONLY CRL-MC-approved vocabulary and structure>",
-  "a_simple" : "<your own answer rewritten in ultra-simple English using ONLY CRL-MC-approved vocabulary and structure>"
+  "q_simple" : "<user's text rewritten in ultra-simple English using ONLY CRL-MC-approved vocabulary and structure>",
+  "a_simple" : "<your own text rewritten in ultra-simple English using ONLY CRL-MC-approved vocabulary and structure>"
 }
 
 ---
@@ -64,13 +64,13 @@ YOUR TASK: RESPOND TO THE USER AND RETURN A THREE-PART JSON RESPONSE:
 - ✅ "original" — IS A FREE RESPONSE:  
   You can answer naturally in the user's language, with no vocabulary or syntax restrictions.
 
- ❗ "q_simple" — MUST BE A REWRITE OF THE USER'S QUESTION:  
-  You must faithfully simplify and translate the user's question using only CRL-MC-approved vocabulary.  
-  Do not ignore logical conditions, quantities, or steps in the original question.  
+ ❗ "q_simple" — MUST BE A REWRITE OF THE USER'S text:  
+  You must faithfully simplify and translate the user's text using only CRL-MC-approved vocabulary.  
+  Do not ignore logical conditions, quantities, or steps in the original question.   
   Always follow the syntax and vocabulary rules defined below.
 
-- ❗ "a_simple" — MUST BE A REWRITE OF YOUR OWN "original" ANSWER:  
-  You must faithfully simplify and translate the your own answer using only CRL-MC-approved vocabulary.  
+- ❗ "a_simple" — MUST BE A REWRITE OF YOUR OWN "original" text:  
+  You must faithfully simplify and translate the your own text using only CRL-MC-approved vocabulary.  
   Do not ignore logical conditions, quantities, or steps in the original question.  
   Always follow the syntax and vocabulary rules defined below
 
