@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<title>Mars-Bot Widget</title>
+
+<!-- Three JS импорт-карта (требуется script_gemini.js) -->
+<script type="importmap">
+{
+  "imports": {
+    "three":           "https://unpkg.com/three@0.176.0/build/three.module.js",
+    "three/examples/": "https://unpkg.com/three@0.176.0/examples/jsm/"
+  }
+}
+</script>
+
+<!-- Главный модуль вашего чата; он сам создаёт WebGL-канвас -->
+<script type="module" src="./script_gemini.js"></script>
+
+<style>
+/* ───── габариты виджета ───── */
+html,body{
+  margin:0; width:380px; height:520px;
+  background:#0e1117; color:#fff;
+  font:14px/1.4 'Fira Sans',sans-serif;
+  overflow:hidden; position:relative;
+}
+
+/* ───── шапка ───── */
+#header{
+  position:relative; z-index:50;
+  height:36px; display:flex; align-items:center; gap:8px;
+  padding:0 12px; background:#141923;
+  border-bottom:1px solid #1f2633;
+  color:#8ab4ff; font-weight:600; letter-spacing:.3px;
+}
+#header img{width:18px}
+
+/* ───── overlay-чат поверх сцены ───── */
+#chat-container{
+  position:absolute; left:0; bottom:0;
+  width:100%; height:40%;
+  display:flex; flex-direction:column;
+  background:rgba(0,0,0,.55); backdrop-filter:blur(6px);
+  z-index:40;                    /* ▶ чат выше канваса */
+}
+#chat-messages{
+  flex:1; overflow-y:auto; padding:8px 10px;
+  display:flex; flex-direction:column; gap:6px;
+}
+#chat-input-area{
+  display:flex; gap:6px; padding:6px;
+  border-top:1px solid #1f2633;
+}
+#chat-input{
+  flex:1; padding:6px;
+  background:#1c2331; border:none; color:#fff;
+}
+.chat-btn{
+  padding:6px 14px; border:none; cursor:pointer;
+  background:#4f7df5; color:#fff; border-radius:4px;
+}
+#chat-clear{background:#c24545}
+
+/* ───── баблы ───── */
+.eng-user,.eng-bot  {background:#2563eb;color:#fff}
+.robo-user,.robo-bot{background:#146314;color:#b9ffbe}
+.eng-user,.eng-bot,.robo-user,.robo-bot{
+  padding:6px 10px; border-radius:8px;
+  font:13px/1.4 'Fira Mono','Consolas',monospace;
+  white-space:pre-wrap; max-width:88%;
+}
+.user-bubble{align-self:flex-end}
+.bot-bubble {align-self:flex-start}
+</style>
+</head>
+
+<body>
+  <!-- шапка -->
+  <div id="header">
+    <img src="https://raw.githubusercontent.com/twbs/icons/main/icons/robot.svg" alt="">
+    Mars-Bot
+  </div>
+
+  <!-- overlay-чат (канвас WebGL появится динамически из script_gemini.js) -->
+  <div id="chat-container">
+    <div id="chat-messages"></div>
+    <div id="chat-input-area">
+      <input id="chat-input" placeholder="Введите сообщение…" autocomplete="off">
+      <button id="chat-send"  class="chat-btn">Send</button>
+      <button id="chat-clear" class="chat-btn" title="Очистить">Clear</button>
+    </div>
+  </div>
+</body>
+</html>
